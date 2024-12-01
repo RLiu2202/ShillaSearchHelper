@@ -12,7 +12,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the combined data
-file_path = '_checkpoint1130'  # 替换为 Excel 文件路径
+file_path = '_checkpoint1130.xlsx'  # 替换为 Excel 文件路径
 excel_data = pd.ExcelFile(file_path)
 all_data = pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
