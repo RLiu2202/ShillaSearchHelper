@@ -1,4 +1,8 @@
-# Add this line to hide the "Made with Streamlit" footer and GitHub icon
+import pandas as pd
+import streamlit as st
+from collections import Counter
+
+# Hide Streamlit default headers and footers
 hide_streamlit_style = """
     <style>
     footer {visibility: hidden;}
@@ -6,11 +10,6 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-import pandas as pd
-import streamlit as st
-from collections import Counter
 
 # Load the combined data
 file_path = 'your_excel_file.xlsx'  # 替换为 Excel 文件路径
