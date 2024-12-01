@@ -1,6 +1,20 @@
 import pandas as pd
 import streamlit as st
+import json
 from collections import Counter
+
+# Function to load keyword counts from a file
+def load_keyword_counts():
+    try:
+        with open("keywords.json", "r") as f:
+            return Counter(json.load(f))
+    except FileNotFoundError:
+        return Counter()
+
+# Function to save keyword counts to a file
+def save_keyword_counts(counter):
+    with open("keywords.json", "w") as f:
+        json.dump(counter, f)
 
 # Hide Streamlit default headers and footers
 hide_streamlit_style = """
@@ -12,19 +26,27 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the combined data
-file_path = '_checkpoint1130.xlsx'  # 替换为 Excel 文件路径
+file_path = 'supermarket_data.xlsx'  # 替换为您的 Excel 文件路径
 excel_data = pd.ExcelFile(file_path)
 all_data = pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
-# Initialize a Counter to track search keyword counts
-if "keyword_counts" not in st.session_state:
-    st.session_state["keyword_counts"] = Counter()
+# Load keyword counts at the start
+keyword_counts = load_keyword_counts()
 
 # Page title
-st.title("Supermarket Product Search Tool")
+st.title("Shilla Product Search (DEMO)")
+
+# Show the top 10 most searched keywords at the top of the page
+st.header("Top 10 Searched Keywords")
+if keyword_counts:
+    top_keywords = keyword_counts.most_common(10)
+    for i, (keyword, count) in enumerate(top_keywords, start=1):
+        st.write(f"{i}. {keyword}: {count} times")
+else:
+    st.write("No keywords searched yet.")
 
 # Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
@@ -51,8 +73,9 @@ discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 filtered_data = all_data.copy()
 
 if search_query:
-    # Record the search query in the Counter
-    st.session_state["keyword_counts"][search_query] += 1
+    # Update keyword counts and save to file
+    keyword_counts[search_query] += 1
+    save_keyword_counts(keyword_counts)
 
     # Apply search query filter
     filtered_data = filtered_data[
@@ -68,27 +91,23 @@ filtered_data = filtered_data[(filtered_data['price'] >= min_price) & (filtered_
 if discount_only:
     filtered_data = filtered_data[filtered_data['Korting'].notna()]
 
-# Display results
-st.header("Search Results")
-if not filtered_data.empty:
-    for _, row in filtered_data.iterrows():
-        st.image(row['image'], width=150)
-        st.write(f"**Product Name:** {row['product_title']}")
-        st.write(f"**Brand:** {row['brand']}")
-        st.write(f"**Price:** €{row['price']}")
-        st.write(f"**After Sale Price:** €{row['after_sale']}")
-        st.write(f"**Discount Info:** {row['Korting']}")
-        st.write(f"**Best Before Date:** {row['bbd']}")
-        st.write(f"[View Details]({row['link']})")
-        st.write("---")
+# Display results or welcome message
+if search_query:
+    st.header("Search Results")
+    if not filtered_data.empty:
+        for _, row in filtered_data.iterrows():
+            st.image(row['image'], width=150)
+            st.write(f"**Product Name:** {row['product_title']}")
+            st.write(f"**Brand:** {row['brand']}")
+            st.write(f"**Price:** €{row['price']}")
+            st.write(f"**After Sale Price:** €{row['after_sale']}")
+            st.write(f"**Discount Info:** {row['Korting']}")
+            st.write(f"**Best Before Date:** {row['bbd']}")
+            st.write(f"[View Details]({row['link']})")
+            st.write("---")
+    else:
+        st.write("No products found matching the selected filters.")
 else:
-    st.write("No products found matching the selected filters.")
-
-# Show the top 10 most searched keywords
-st.header("Top 10 Searched Keywords")
-if st.session_state["keyword_counts"]:
-    top_keywords = st.session_state["keyword_counts"].most_common(10)
-    for i, (keyword, count) in enumerate(top_keywords, start=1):
-        st.write(f"{i}. {keyword}: {count} times")
-else:
-    st.write("No keywords searched yet.")
+    # Show welcome message if no search query
+    st.title("Supermarket Product Search Tool")
+    st.write("Welcome! Please use the search filters on the left to find products.")
