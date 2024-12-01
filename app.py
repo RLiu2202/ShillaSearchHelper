@@ -7,9 +7,10 @@ from collections import Counter
 def load_keyword_counts():
     try:
         with open("keywords.json", "r") as f:
-            return Counter(json.load(f))
-    except FileNotFoundError:
-        return Counter()
+            data = json.load(f)  # 尝试读取 JSON 数据
+            return Counter(data)  # 转换为 Counter 对象
+    except (FileNotFoundError, json.JSONDecodeError):  # 文件不存在或 JSON 无效
+        return Counter()  # 返回一个空的 Counter 对象
 
 # Function to save keyword counts to a file
 def save_keyword_counts(counter):
@@ -37,7 +38,7 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 keyword_counts = load_keyword_counts()
 
 # Page title
-st.title("Shilla Product Search (DEMO)")
+st.title("Shilla Product Search DEMO")
 
 # Show the top 10 most searched keywords at the top of the page
 st.header("Top 10 Searched Keywords")
