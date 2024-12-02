@@ -110,10 +110,5 @@ if search_query:
         st.write("No products found matching the selected filters.")
 else:
     # Show welcome message if no search query
-    st.markdown(
-    """
-    <h3 style='text-align: center; font-size: 24px;'>Good Morning Ryota! Let's Find What You Need :)</h3>
-    """,
-    unsafe_allow_html=True,
-)
+    st.title("Good Morning Ryota! Let's Find What You Need :)")
     st.write("Welcome! Please use the search filters on the left to find products.")
