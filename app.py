@@ -52,6 +52,14 @@ else:
 # Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
 
+# Sidebar option to view supermarket layout
+if st.sidebar.checkbox("Show Shelf Position"):
+    st.header("Shilla Layout")
+    st.image("shelf position.jpg", caption="Shilla Layout", use_column_width=True)
+
+# Placeholder for other features, such as searching
+st.write("Welcome! Please use the search filters on the left to find products.")
+
 # Keyword search
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:")
 
