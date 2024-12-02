@@ -104,7 +104,7 @@ if search_query:
         for _, row in filtered_data.iterrows():
             st.image(row['image'], width=150)
             st.write(f"**Product Name:** {row['product_title']}")
-            st.write(f"**Shelf Location:** {row.get('place', 'N/A')}")
+            st.write(f"**Shelf Location:** {row['place']}")
             st.write(f"**Brand:** {row['brand']}")
             st.write(f"**Price:** €{row['price']}")
             st.write(f"**After Sale Price:** €{row['after_sale']}")
