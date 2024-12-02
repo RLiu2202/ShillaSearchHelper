@@ -110,5 +110,5 @@ if search_query:
         st.write("No products found matching the selected filters.")
 else:
     # Show welcome message if no search query
-    st.title("Supermarket Product Search Tool")
+    st.title("Good Morning! Let's Find What You Need :)")
     st.write("Welcome! Please use the search filters on the left to find products.")
