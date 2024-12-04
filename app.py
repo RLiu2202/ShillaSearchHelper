@@ -78,53 +78,50 @@ discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 # Shelf location filter
 shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
 
-# Apply filters to the dataset
-filtered_data = all_data.copy() # 初始化为完整数据集
+# Initialize filtered_data as the full dataset
+filtered_data = all_data.copy()
 
 # Apply Search by Product Name or Keyword filter (if provided)
 if search_query:
-    # Update keyword counts and save to file
     keyword_counts[search_query] += 1
     save_keyword_counts(keyword_counts)
-
-    # Apply search query filter
     filtered_data = filtered_data[
         filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
         filtered_data['brand'].str.contains(search_query, case=False, na=False)
     ]
 
+# Apply Brand filter
 if selected_brand != "All":
     filtered_data = filtered_data[filtered_data['brand'] == selected_brand]
 
-filtered_data = filtered_data[(filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)]
+# Apply Price range filter
+filtered_data = filtered_data[
+    (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)
+]
 
+# Apply Discount filter
 if discount_only:
     filtered_data = filtered_data[filtered_data['Korting'].notna()]
 
-# Filter by shelf location
+# Apply Shelf Location filter
 if shelf_query:
     filtered_data = filtered_data[
         filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
     ]
 
-
-# Display results or welcome message
+# Display results
 if not filtered_data.empty:
     st.header("Search Results")
-        for _, row in filtered_data.iterrows():
-            st.image(row['image'], width=150)
-            st.write(f"**Product Name:** {row['product_title']}")
-            st.write(f"**Shelf Location:** {row['Place']}")
-            st.write(f"**Brand:** {row['brand']}")
-            st.write(f"**Price:** €{row['price']}")
-            st.write(f"**After Sale Price:** €{row['after_sale']}")
-            st.write(f"**Discount Info:** {row['Korting']}")
-            st.write(f"**Best Before Date:** {row['bbd']}")
-            st.write(f"[View Details]({row['link']})")
-            st.write("---")
-    else:
-        st.write("No products found matching the selected filters.")
+    for _, row in filtered_data.iterrows():
+        st.image(row['image'], width=150)
+        st.write(f"**Product Name:** {row['product_title']}")
+        st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
+        st.write(f"**Brand:** {row['brand']}")
+        st.write(f"**Price:** €{row['price']}")
+        st.write(f"**After Sale Price:** €{row['after_sale']}")  
+        st.write(f"**Discount Info:** {row['Korting']}")  
+        st.write(f"**Best Before Date:** {row['bbd']}")
+        st.write(f"[View Details]({row['link']})")
+        st.write("---")
 else:
-    # Show welcome message if no search query
-    st.title("Good Morning Ryota! Let's Find What You Need :)")
-    st.write("Welcome! Please use the search filters on the left to find products.")
+    st.write("No products found matching the selected filters.")
