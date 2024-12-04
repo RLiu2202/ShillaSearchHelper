@@ -2,8 +2,8 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
-import urllib.parse
-import requests
+import random
+
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
@@ -34,18 +34,6 @@ def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
-# 清理图片链接
-def clean_url(url):
-    parsed_url = urllib.parse.urlparse(url)
-    return parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
-
-# 验证图片链接是否有效
-def is_valid_image(url):
-    try:
-        response = requests.head(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
 
 # 加载数据
 file_path = '_checkpoint1203.xlsx'  # 替换为您的 Excel 文件路径
@@ -56,6 +44,10 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
+
+# 添加随机查询参数到图片链接，绕过缓存问题
+import random
+all_data['image'] = all_data['image'] + "?cache_bypass=" + all_data['image'].apply(lambda _: str(random.randint(1, 1_000_000)))
 
 # Page title
 st.title("Shilla Product Search DEMO")
