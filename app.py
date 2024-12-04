@@ -51,13 +51,6 @@ def is_valid_image(url):
 file_path = '_checkpoint1203.xlsx'  # 替换为您的 Excel 文件路径
 all_data = load_data(file_path)
 
-# 清理图片链接并验证有效性
-default_image = "https://example.com/default.jpg"  # 替换为您希望的默认图片链接
-all_data['image'] = all_data['image'].str.strip().apply(clean_url)
-all_data['image'] = all_data['image'].apply(
-    lambda x: x if is_valid_image(x) else default_image
-)
-
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
