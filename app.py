@@ -75,6 +75,9 @@ min_price, max_price = st.sidebar.slider(
 # Discount filter
 discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 
+# Shelf location filter
+shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
+
 # Apply filters to the dataset
 filtered_data = all_data.copy()
 
@@ -96,6 +99,13 @@ filtered_data = filtered_data[(filtered_data['price'] >= min_price) & (filtered_
 
 if discount_only:
     filtered_data = filtered_data[filtered_data['Korting'].notna()]
+
+# Filter by shelf location
+if shelf_query:
+    filtered_data = filtered_data[
+        filtered_data['place'].str.contains(shelf_query, case=False, na=False)
+    ]
+
 
 # Display results or welcome message
 if search_query:
