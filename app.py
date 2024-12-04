@@ -103,7 +103,7 @@ if discount_only:
 # Filter by shelf location
 if shelf_query:
     filtered_data = filtered_data[
-        filtered_data['place'].str.contains(shelf_query, case=False, na=False)
+        filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
     ]
 
 
