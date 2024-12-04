@@ -79,8 +79,9 @@ discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
 
 # Apply filters to the dataset
-filtered_data = all_data.copy()
+filtered_data = all_data.copy() # 初始化为完整数据集
 
+# Apply Search by Product Name or Keyword filter (if provided)
 if search_query:
     # Update keyword counts and save to file
     keyword_counts[search_query] += 1
@@ -108,9 +109,8 @@ if shelf_query:
 
 
 # Display results or welcome message
-if search_query:
+if not filtered_data.empty:
     st.header("Search Results")
-    if not filtered_data.empty:
         for _, row in filtered_data.iterrows():
             st.image(row['image'], width=150)
             st.write(f"**Product Name:** {row['product_title']}")
