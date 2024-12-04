@@ -2,6 +2,8 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
+import urllib.parse
+import requests
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
@@ -32,9 +34,29 @@ def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
+# 清理图片链接
+def clean_url(url):
+    parsed_url = urllib.parse.urlparse(url)
+    return parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
+
+# 验证图片链接是否有效
+def is_valid_image(url):
+    try:
+        response = requests.head(url, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
 # 加载数据
 file_path = '_checkpoint1203.xlsx'  # 替换为您的 Excel 文件路径
 all_data = load_data(file_path)
+
+# 清理图片链接并验证有效性
+default_image = "https://example.com/default.jpg"  # 替换为您希望的默认图片链接
+all_data['image'] = all_data['image'].str.strip().apply(clean_url)
+all_data['image'] = all_data['image'].apply(
+    lambda x: x if is_valid_image(x) else default_image
+)
 
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
