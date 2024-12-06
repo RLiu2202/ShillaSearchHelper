@@ -2,15 +2,17 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
+import random
+
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
     try:
         with open("keywords.json", "r") as f:
-            data = json.load(f)  # 尝试读取 JSON 数据
-            return Counter(data)  # 转换为 Counter 对象
-    except (FileNotFoundError, json.JSONDecodeError):  # 文件不存在或 JSON 无效
-        return Counter()  # 返回一个空的 Counter 对象
+            data = json.load(f)  
+            return Counter(data)  
+    except (FileNotFoundError, json.JSONDecodeError): 
+        return Counter()  
 
 # Function to save keyword counts to a file
 def save_keyword_counts(counter):
@@ -26,16 +28,26 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Load the combined data
-file_path = '_checkpoint1130.xlsx'  # 替换为您的 Excel 文件路径
-excel_data = pd.ExcelFile(file_path)
-all_data = pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
+# Load the combined data with caching
+@st.cache_data
+def load_data(file_path):
+    excel_data = pd.ExcelFile(file_path)
+    return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
+
+
+# load data
+file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
+all_data = load_data(file_path)
 
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
+
+# 可能出现缓存问题
+import random
+all_data['image'] = all_data['image'] + "?cache_bypass=" + all_data['image'].apply(lambda _: str(random.randint(1, 1_000_000)))
 
 # Page title
 st.title("Shilla Product Search DEMO")
@@ -48,6 +60,10 @@ if keyword_counts:
         st.write(f"{i}. {keyword}: {count} times")
 else:
     st.write("No keywords searched yet.")
+
+# Welcome message
+st.title("Good Morning Ryota! Let's Find What You Need :)")
+st.write("Welcome! Please use the search filters on the left to find products.")
 
 # Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
@@ -75,46 +91,58 @@ min_price, max_price = st.sidebar.slider(
 # Discount filter
 discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 
-# Apply filters to the dataset
+# Shelf location filter
+shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
+
+# Initialize filtered_data as the full dataset
 filtered_data = all_data.copy()
 
-if search_query:
+# Apply filters only if search_query or any filter is set
+if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].min()) or max_price != float(all_data['price'].max())):
     # Update keyword counts and save to file
-    keyword_counts[search_query] += 1
-    save_keyword_counts(keyword_counts)
+    if search_query:
+        keyword_counts[search_query] += 1
+        save_keyword_counts(keyword_counts)
 
-    # Apply search query filter
+    # Apply Search by Product Name or Keyword filter (if provided)
+    if search_query:
+        filtered_data = filtered_data[
+            filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
+            filtered_data['brand'].str.contains(search_query, case=False, na=False)
+        ]
+
+    # Apply Brand filter
+    if selected_brand != "All":
+        filtered_data = filtered_data[filtered_data['brand'] == selected_brand]
+
+    # Apply Price range filter
     filtered_data = filtered_data[
-        filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
-        filtered_data['brand'].str.contains(search_query, case=False, na=False)
+        (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)
     ]
 
-if selected_brand != "All":
-    filtered_data = filtered_data[filtered_data['brand'] == selected_brand]
+    # Apply Discount filter
+    if discount_only:
+        filtered_data = filtered_data[filtered_data['Korting'].notna()]
 
-filtered_data = filtered_data[(filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)]
+    # Apply Shelf Location filter
+    if shelf_query:
+        filtered_data = filtered_data[
+            filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
+        ]
 
-if discount_only:
-    filtered_data = filtered_data[filtered_data['Korting'].notna()]
-
-# Display results or welcome message
-if search_query:
+    # Display filtered results
     st.header("Search Results")
     if not filtered_data.empty:
         for _, row in filtered_data.iterrows():
             st.image(row['image'], width=150)
             st.write(f"**Product Name:** {row['product_title']}")
-            st.write(f"**Shelf Location:** {row['Place']}")
+            st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
             st.write(f"**Brand:** {row['brand']}")
             st.write(f"**Price:** €{row['price']}")
-            st.write(f"**After Sale Price:** €{row['after_sale']}")
-            st.write(f"**Discount Info:** {row['Korting']}")
+            st.write(f"**After Sale Price:** €{row['after_sale']}")  
+            st.write(f"**Discount Info:** {row['Korting']}")  
             st.write(f"**Best Before Date:** {row['bbd']}")
             st.write(f"[View Details]({row['link']})")
             st.write("---")
     else:
         st.write("No products found matching the selected filters.")
-else:
-    # Show welcome message if no search query
-    st.title("Good Morning Ryota! Let's Find What You Need :)")
-    st.write("Welcome! Please use the search filters on the left to find products.")
