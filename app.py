@@ -45,10 +45,6 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
 
-# 可能出现缓存问题
-import random
-all_data['image'] = all_data['image'] + "?cache_bypass=" + all_data['image'].apply(lambda _: str(random.randint(1, 1_000_000)))
-
 # Page title
 st.title("Shilla Product Search DEMO")
 
