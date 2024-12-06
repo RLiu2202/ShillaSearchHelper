@@ -1,0 +1,17 @@
+import json
+from collections import Counter
+
+# Function to load keyword counts from a file
+def load_keyword_counts():
+    try:
+        with open("keywords.json", "r") as f:
+            data = json.load(f)
+            return Counter(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # 如果文件不存在或内容为空，则返回一个空的 Counter
+        return Counter()
+
+# Function to save keyword counts to a file
+def save_keyword_counts(counter):
+    with open("keywords.json", "w") as f:
+        json.dump(counter, f)
