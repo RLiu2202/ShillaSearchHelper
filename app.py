@@ -49,6 +49,18 @@ all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
 
+# Initialize session state for filters
+if 'search_query' not in st.session_state:
+    st.session_state['search_query'] = ""
+if 'selected_brand' not in st.session_state:
+    st.session_state['selected_brand'] = "All"
+if 'min_price' not in st.session_state or 'max_price' not in st.session_state:
+    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
+if 'discount_only' not in st.session_state:
+    st.session_state['discount_only'] = False
+if 'shelf_query' not in st.session_state:
+    st.session_state['shelf_query'] = ""
+
 # Page title
 st.title("Shilla Product Search DEMO")
 
@@ -70,25 +82,14 @@ st.sidebar.header("Search Filters")
 
 # Reset Filters Button
 if st.sidebar.button("Reset Filters"):
-    # 清空筛选条件并重新加载页面
+    # Reset all filters to their initial state
     st.session_state['search_query'] = ""
     st.session_state['selected_brand'] = "All"
     st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
     st.session_state['discount_only'] = False
     st.session_state['shelf_query'] = ""
+    # Rerun the app
     st.experimental_rerun()
-
-# Initialize session state for filters
-if 'search_query' not in st.session_state:
-    st.session_state['search_query'] = ""
-if 'selected_brand' not in st.session_state:
-    st.session_state['selected_brand'] = "All"
-if 'min_price' not in st.session_state or 'max_price' not in st.session_state:
-    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
-if 'discount_only' not in st.session_state:
-    st.session_state['discount_only'] = False
-if 'shelf_query' not in st.session_state:
-    st.session_state['shelf_query'] = ""
 
 # Sidebar filters
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
