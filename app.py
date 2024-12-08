@@ -46,9 +46,6 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
-# Barcode
-all_data['Barcode'] = all_data['Barcode'].fillna(0).astype(int)
-
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
 
@@ -86,9 +83,9 @@ selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list
 # Price range filter
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
-    min_value=float(all_data['price'].astype(float).min()),
-    max_value=float(all_data['price'].astype(float).max()),
-    value=(float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max()))
+    min_value=float(all_data['price'].min()),
+    max_value=float(all_data['price'].max()),
+    value=(float(all_data['price'].min()), float(all_data['price'].max()))
 )
 
 # Discount filter
@@ -96,9 +93,6 @@ discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 
 # Shelf location filter
 shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
-
-# Barcode search
-barcode_query = st.sidebar.text_input("Search by Barcode:")
 
 # Initialize filtered_data as the full dataset
 filtered_data = all_data.copy()
@@ -136,11 +130,6 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
             filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
         ]
 
-    # Apply Barcode Search
-    if barcode_query:
-        barcode_query = int(barcode_query)  # Convert to integer
-        filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
-
     # Display filtered results
     st.header("Search Results")
     if not filtered_data.empty:
@@ -149,7 +138,8 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
             st.write(f"**Product Name:** {row['product_title']}")
             st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
             st.write(f"**Brand:** {row['brand']}")
-            st.write(f"**Price:** €{row['after_sale']}")  
+            st.write(f"**Price:** €{row['price']}")
+            st.write(f"**After Sale Price:** €{row['after_sale']}")  
             st.write(f"**Discount Info:** {row['Korting']}")  
             st.write(f"**Best Before Date:** {row['bbd']}")
             st.write(f"[View Details]({row['link']})")
