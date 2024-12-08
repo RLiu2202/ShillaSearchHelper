@@ -69,8 +69,21 @@ st.write("Welcome! Please use the search filters on the left to find products.")
 st.sidebar.header("Search Filters")
 
 # Add a reset button to clear filters
+# Reset Filters Button
 if st.sidebar.button("Reset Filters"):
+    # 清空筛选条件
+    search_query = ""
+    selected_brand = "All"
+    min_price, max_price = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
+    discount_only = False
+    shelf_query = ""
+    
+    # 重新加载页面，确保初始化
     st.experimental_rerun()
+
+# Initialize filtered_data as the full dataset
+filtered_data = all_data.copy()
+
 
 # Sidebar option to view supermarket layout
 if st.sidebar.checkbox("Show Shelf Position"):
