@@ -34,6 +34,14 @@ def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
+    # Ensure numeric types
+    all_data['price'] = all_data['price'].astype(float)
+    all_data['after_sale'] = all_data['after_sale'].astype(float)
+    all_data['Barcode'] = all_data['Barcode'].fillna(0).astype(int)
+    all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date  # Convert dates
+    
+    return all_data
+
 
 # load data
 file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
@@ -135,6 +143,7 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
 
     # Apply Barcode Search
     if barcode_query:
+        barcode_query = int(barcode_query)  # Convert to integer
         filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
 
     # Display filtered results
