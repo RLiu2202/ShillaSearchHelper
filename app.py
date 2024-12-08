@@ -42,9 +42,9 @@ all_data = load_data(file_path)
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
-# Format price to two decimal places
-all_data['price'] = all_data['price'].apply(lambda x: f"{x:.2f}")
-all_data['after_sale'] = all_data['after_sale'].apply(lambda x: f"{x:.2f}" if not pd.isna(x) else x)
+# Format prices to 2 decimal places
+all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
+all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
@@ -68,80 +68,62 @@ st.write("Welcome! Please use the search filters on the left to find products.")
 # Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
 
-# Add a reset button to clear filters
 # Reset Filters Button
 if st.sidebar.button("Reset Filters"):
-    # 清空筛选条件
-    search_query = ""
-    selected_brand = "All"
-    min_price, max_price = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
-    discount_only = False
-    shelf_query = ""
-    
-    # 重新加载页面，确保初始化
+    # 清空筛选条件并重新加载页面
+    st.session_state['search_query'] = ""
+    st.session_state['selected_brand'] = "All"
+    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
+    st.session_state['discount_only'] = False
+    st.session_state['shelf_query'] = ""
     st.experimental_rerun()
 
-# Initialize filtered_data as the full dataset
-filtered_data = all_data.copy()
+# Initialize session state for filters
+if 'search_query' not in st.session_state:
+    st.session_state['search_query'] = ""
+if 'selected_brand' not in st.session_state:
+    st.session_state['selected_brand'] = "All"
+if 'min_price' not in st.session_state or 'max_price' not in st.session_state:
+    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
+if 'discount_only' not in st.session_state:
+    st.session_state['discount_only'] = False
+if 'shelf_query' not in st.session_state:
+    st.session_state['shelf_query'] = ""
 
-
-# Sidebar option to view supermarket layout
-if st.sidebar.checkbox("Show Shelf Position"):
-    st.header("Shilla Layout")
-    st.image("shelf position.jpg", caption="Shilla Layout", use_column_width=True)
-
-# Keyword search
-search_query = st.sidebar.text_input("Search by Product Name or Keyword:")
-
-# Brand filter
-unique_brands = all_data['brand'].dropna().unique()
-selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(unique_brands))
-
-# Price range filter
+# Sidebar filters
+search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
+selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(all_data['brand'].dropna().unique()), index=0 if st.session_state['selected_brand'] == "All" else list(all_data['brand'].dropna().unique()).index(st.session_state['selected_brand']))
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
     min_value=float(all_data['price'].astype(float).min()),
     max_value=float(all_data['price'].astype(float).max()),
-    value=(float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max()))
+    value=(st.session_state['min_price'], st.session_state['max_price'])
 )
+discount_only = st.sidebar.checkbox("Show Discounted Items Only", value=st.session_state['discount_only'])
+shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):", st.session_state['shelf_query'])
 
-# Discount filter
-discount_only = st.sidebar.checkbox("Show Discounted Items Only")
-
-# Shelf location filter
-shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
-
-# Initialize filtered_data as the full dataset
+# Apply filters
 filtered_data = all_data.copy()
 
-# Apply filters only if search_query or any filter is set
 if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
-    # Update keyword counts and save to file
     if search_query:
         keyword_counts[search_query] += 1
         save_keyword_counts(keyword_counts)
-
-    # Apply Search by Product Name or Keyword filter (if provided)
-    if search_query:
         filtered_data = filtered_data[
             filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
             filtered_data['brand'].str.contains(search_query, case=False, na=False)
         ]
 
-    # Apply Brand filter
     if selected_brand != "All":
         filtered_data = filtered_data[filtered_data['brand'] == selected_brand]
 
-    # Apply Price range filter
     filtered_data = filtered_data[
         (filtered_data['price'].astype(float) >= min_price) & (filtered_data['price'].astype(float) <= max_price)
     ]
 
-    # Apply Discount filter
     if discount_only:
         filtered_data = filtered_data[filtered_data['Korting'].notna()]
 
-    # Apply Shelf Location filter
     if shelf_query:
         filtered_data = filtered_data[
             filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
