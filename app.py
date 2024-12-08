@@ -35,7 +35,7 @@ def load_data(file_path):
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
 
-# load data
+# Load data
 file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
 all_data = load_data(file_path)
 
@@ -87,9 +87,9 @@ selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list
 # Price range filter
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
-    min_value=float(all_data['price'].min()),
-    max_value=float(all_data['price'].max()),
-    value=(float(all_data['price'].min()), float(all_data['price'].max()))
+    min_value=float(all_data['price'].astype(float).min()),
+    max_value=float(all_data['price'].astype(float).max()),
+    value=(float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max()))
 )
 
 # Discount filter
@@ -102,7 +102,7 @@ shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
 filtered_data = all_data.copy()
 
 # Apply filters only if search_query or any filter is set
-if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].min()) or max_price != float(all_data['price'].max())):
+if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
     # Update keyword counts and save to file
     if search_query:
         keyword_counts[search_query] += 1
@@ -121,7 +121,7 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
 
     # Apply Price range filter
     filtered_data = filtered_data[
-        (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)
+        (filtered_data['price'].astype(float) >= min_price) & (filtered_data['price'].astype(float) <= max_price)
     ]
 
     # Apply Discount filter
