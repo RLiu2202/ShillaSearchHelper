@@ -46,6 +46,11 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
+# Apply Price range filter
+filtered_data = filtered_data[
+    (filtered_data['price'].astype(float) >= min_price) & (filtered_data['price'].astype(float) <= max_price)
+]
+
 # Barcode should be strings
 all_data['Barcode'] = all_data['Barcode'].astype(str)
 
