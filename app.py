@@ -91,9 +91,9 @@ selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list
 # Price range filter
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
-    min_value=float(all_data['price'].min()),
-    max_value=float(all_data['price'].max()),
-    value=(float(all_data['price'].min()), float(all_data['price'].max()))
+    min_value=float(all_data['price'].astype(float).min()),
+    max_value=float(all_data['price'].astype(float).max()),
+    value=(float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max()))
 )
 
 # Discount filter
@@ -144,7 +144,6 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
     # Apply Barcode Search
     if barcode_query:
         filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
-
 
     # Display filtered results
     st.header("Search Results")
