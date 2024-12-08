@@ -34,14 +34,6 @@ def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
-    # Ensure numeric types
-    all_data['price'] = all_data['price'].astype(float)
-    all_data['after_sale'] = all_data['after_sale'].astype(float)
-    all_data['Barcode'] = all_data['Barcode'].fillna(0).astype(int)
-    all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date  # Convert dates
-    
-    return all_data
-
 
 # load data
 file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
@@ -53,6 +45,9 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 # Format prices to 2 decimal places
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
+
+# Barcode
+all_data['Barcode'] = all_data['Barcode'].fillna(0).astype(int)
 
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
