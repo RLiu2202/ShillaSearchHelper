@@ -2,23 +2,22 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
+import random
 
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
     try:
         with open("keywords.json", "r") as f:
-            data = json.load(f)
-            return Counter(data)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return Counter()
-
+            data = json.load(f)  
+            return Counter(data)  
+    except (FileNotFoundError, json.JSONDecodeError): 
+        return Counter()  
 
 # Function to save keyword counts to a file
 def save_keyword_counts(counter):
     with open("keywords.json", "w") as f:
         json.dump(counter, f)
-
 
 # Hide Streamlit default headers and footers
 hide_streamlit_style = """
@@ -29,7 +28,6 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-
 # Load the combined data with caching
 @st.cache_data
 def load_data(file_path):
@@ -37,8 +35,8 @@ def load_data(file_path):
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
 
-# Load data
-file_path = '_checkpoint1203.xlsx'
+# load data
+file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
 all_data = load_data(file_path)
 
 # Convert BBD to date only
@@ -48,30 +46,16 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
-# Initialize session state
-if 'filters_reset' not in st.session_state:
-    st.session_state['filters_reset'] = False
-if 'search_query' not in st.session_state:
-    st.session_state['search_query'] = ""
-if 'selected_brand' not in st.session_state:
-    st.session_state['selected_brand'] = "All"
-if 'min_price' not in st.session_state or 'max_price' not in st.session_state:
-    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
-if 'discount_only' not in st.session_state:
-    st.session_state['discount_only'] = False
-if 'shelf_query' not in st.session_state:
-    st.session_state['shelf_query'] = ""
-if 'keyword_counts' not in st.session_state:
-    st.session_state['keyword_counts'] = load_keyword_counts()
-
+# Load keyword counts at the start
+keyword_counts = load_keyword_counts()
 
 # Page title
 st.title("Shilla Product Search DEMO")
 
-# Show the top 10 most searched keywords
+# Show the top 10 most searched keywords at the top of the page
 st.header("Top 10 Searched Keywords")
-if st.session_state['keyword_counts']:
-    top_keywords = st.session_state['keyword_counts'].most_common(10)
+if keyword_counts:
+    top_keywords = keyword_counts.most_common(10)
     for i, (keyword, count) in enumerate(top_keywords, start=1):
         st.write(f"{i}. {keyword}: {count} times")
 else:
@@ -81,56 +65,66 @@ else:
 st.title("Good Morning Ryota! Let's Find What You Need :)")
 st.write("Welcome! Please use the search filters on the left to find products.")
 
-# Sidebar for filters
+# Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
 
-# Reset Filters Button
-if st.sidebar.button("Reset Filters"):
-    st.session_state['search_query'] = ""
-    st.session_state['selected_brand'] = "All"
-    st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
-    st.session_state['discount_only'] = False
-    st.session_state['shelf_query'] = ""
-    st.session_state['filters_reset'] = True
-    st.session_state['keyword_counts'] = Counter()  # Clear keyword counts
-    save_keyword_counts(st.session_state['keyword_counts'])  # Save cleared counts
-    st.experimental_rerun()  # Immediately rerun the script
+# Sidebar option to view supermarket layout
+if st.sidebar.checkbox("Show Shelf Position"):
+    st.header("Shilla Layout")
+    st.image("shelf position.jpg", caption="Shilla Layout", use_column_width=True)
 
-# Sidebar filters
-search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
-selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(all_data['brand'].dropna().unique()))
+# Keyword search
+search_query = st.sidebar.text_input("Search by Product Name or Keyword:")
+
+# Brand filter
+unique_brands = all_data['brand'].dropna().unique()
+selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(unique_brands))
+
+# Price range filter
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
-    min_value=float(all_data['price'].astype(float).min()),
-    max_value=float(all_data['price'].astype(float).max()),
-    value=(st.session_state['min_price'], st.session_state['max_price'])
+    min_value=float(all_data['price'].min()),
+    max_value=float(all_data['price'].max()),
+    value=(float(all_data['price'].min()), float(all_data['price'].max()))
 )
-discount_only = st.sidebar.checkbox("Show Discounted Items Only", value=st.session_state['discount_only'])
-shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):", st.session_state['shelf_query'])
 
-# Apply filters
+# Discount filter
+discount_only = st.sidebar.checkbox("Show Discounted Items Only")
+
+# Shelf location filter
+shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
+
+# Initialize filtered_data as the full dataset
 filtered_data = all_data.copy()
 
-if search_query or selected_brand != "All" or discount_only or shelf_query or (
-        min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
+# Apply filters only if search_query or any filter is set
+if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
+    # Update keyword counts and save to file
     if search_query:
-        st.session_state['keyword_counts'][search_query] += 1
-        save_keyword_counts(st.session_state['keyword_counts'])
+        keyword_counts[search_query] += 1
+        save_keyword_counts(keyword_counts)
+
+    # Apply Search by Product Name or Keyword filter (if provided)
+    if search_query:
         filtered_data = filtered_data[
             filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
             filtered_data['brand'].str.contains(search_query, case=False, na=False)
         ]
 
+    # Apply Brand filter
     if selected_brand != "All":
         filtered_data = filtered_data[filtered_data['brand'] == selected_brand]
 
+    # Apply Price range filter
     filtered_data = filtered_data[
-        (filtered_data['price'].astype(float) >= min_price) & (filtered_data['price'].astype(float) <= max_price)
+        (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)
     ]
 
+    # Apply Discount filter
     if discount_only:
         filtered_data = filtered_data[filtered_data['Korting'].notna()]
 
+    # Apply Shelf Location filter
     if shelf_query:
         filtered_data = filtered_data[
             filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
@@ -145,8 +139,8 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (
             st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
             st.write(f"**Brand:** {row['brand']}")
             st.write(f"**Price:** €{row['price']}")
-            st.write(f"**After Sale Price:** €{row['after_sale']}")
-            st.write(f"**Discount Info:** {row['Korting']}")
+            st.write(f"**After Sale Price:** €{row['after_sale']}")  
+            st.write(f"**Discount Info:** {row['Korting']}")  
             st.write(f"**Best Before Date:** {row['bbd']}")
             st.write(f"[View Details]({row['link']})")
             st.write("---")
