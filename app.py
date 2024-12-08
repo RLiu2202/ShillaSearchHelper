@@ -38,7 +38,7 @@ def load_data(file_path):
 
 
 # Load data
-file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
+file_path = '_checkpoint1203.xlsx'
 all_data = load_data(file_path)
 
 # Convert BBD to date only
@@ -48,10 +48,9 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
-# Initialize session state for filters and keyword counts
+# Initialize session state
 if 'filters_reset' not in st.session_state:
     st.session_state['filters_reset'] = False
-
 if 'search_query' not in st.session_state:
     st.session_state['search_query'] = ""
 if 'selected_brand' not in st.session_state:
@@ -69,7 +68,7 @@ if 'keyword_counts' not in st.session_state:
 # Page title
 st.title("Shilla Product Search DEMO")
 
-# Show the top 10 most searched keywords at the top of the page
+# Show the top 10 most searched keywords
 st.header("Top 10 Searched Keywords")
 if st.session_state['keyword_counts']:
     top_keywords = st.session_state['keyword_counts'].most_common(10)
@@ -82,24 +81,24 @@ else:
 st.title("Good Morning Ryota! Let's Find What You Need :)")
 st.write("Welcome! Please use the search filters on the left to find products.")
 
-# Sidebar for multi-condition filters
+# Sidebar for filters
 st.sidebar.header("Search Filters")
 
 # Reset Filters Button
 if st.sidebar.button("Reset Filters"):
-    # Reset all filters to their initial state
     st.session_state['search_query'] = ""
     st.session_state['selected_brand'] = "All"
     st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
     st.session_state['discount_only'] = False
     st.session_state['shelf_query'] = ""
     st.session_state['filters_reset'] = True
-    st.session_state['keyword_counts'].clear()  # Clear keyword counts
-    save_keyword_counts(st.session_state['keyword_counts'])  # Save the cleared counts
+    st.session_state['keyword_counts'] = Counter()  # Clear keyword counts
+    save_keyword_counts(st.session_state['keyword_counts'])  # Save cleared counts
+    st.experimental_rerun()  # Immediately rerun the script
 
 # Sidebar filters
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
-selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(all_data['brand'].dropna().unique()), index=0 if st.session_state['selected_brand'] == "All" else list(all_data['brand'].dropna().unique()).index(st.session_state['selected_brand']))
+selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(all_data['brand'].dropna().unique()))
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
     min_value=float(all_data['price'].astype(float).min()),
@@ -112,8 +111,9 @@ shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):", st.session_st
 # Apply filters
 filtered_data = all_data.copy()
 
-if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
-    if search_query and not st.session_state['filters_reset']:
+if search_query or selected_brand != "All" or discount_only or shelf_query or (
+        min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
+    if search_query:
         st.session_state['keyword_counts'][search_query] += 1
         save_keyword_counts(st.session_state['keyword_counts'])
         filtered_data = filtered_data[
@@ -145,8 +145,8 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
             st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
             st.write(f"**Brand:** {row['brand']}")
             st.write(f"**Price:** €{row['price']}")
-            st.write(f"**After Sale Price:** €{row['after_sale']}")  
-            st.write(f"**Discount Info:** {row['Korting']}")  
+            st.write(f"**After Sale Price:** €{row['after_sale']}")
+            st.write(f"**Discount Info:** {row['Korting']}")
             st.write(f"**Best Before Date:** {row['bbd']}")
             st.write(f"[View Details]({row['link']})")
             st.write("---")
