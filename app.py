@@ -29,7 +29,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the combined data with caching
-@st.cache_data
+#@st.cache_data
 def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
