@@ -2,22 +2,23 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
-import random
 
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
     try:
         with open("keywords.json", "r") as f:
-            data = json.load(f)  
-            return Counter(data)  
-    except (FileNotFoundError, json.JSONDecodeError): 
-        return Counter()  
+            data = json.load(f)
+            return Counter(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return Counter()
+
 
 # Function to save keyword counts to a file
 def save_keyword_counts(counter):
     with open("keywords.json", "w") as f:
         json.dump(counter, f)
+
 
 # Hide Streamlit default headers and footers
 hide_streamlit_style = """
@@ -27,6 +28,7 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 # Load the combined data with caching
 @st.cache_data
@@ -46,10 +48,7 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
-# Load keyword counts at the start
-keyword_counts = load_keyword_counts()
-
-# Initialize session state for filters
+# Initialize session state for filters and keyword counts
 if 'filters_reset' not in st.session_state:
     st.session_state['filters_reset'] = False
 
@@ -63,14 +62,17 @@ if 'discount_only' not in st.session_state:
     st.session_state['discount_only'] = False
 if 'shelf_query' not in st.session_state:
     st.session_state['shelf_query'] = ""
+if 'keyword_counts' not in st.session_state:
+    st.session_state['keyword_counts'] = load_keyword_counts()
+
 
 # Page title
 st.title("Shilla Product Search DEMO")
 
 # Show the top 10 most searched keywords at the top of the page
 st.header("Top 10 Searched Keywords")
-if keyword_counts:
-    top_keywords = keyword_counts.most_common(10)
+if st.session_state['keyword_counts']:
+    top_keywords = st.session_state['keyword_counts'].most_common(10)
     for i, (keyword, count) in enumerate(top_keywords, start=1):
         st.write(f"{i}. {keyword}: {count} times")
 else:
@@ -92,6 +94,8 @@ if st.sidebar.button("Reset Filters"):
     st.session_state['discount_only'] = False
     st.session_state['shelf_query'] = ""
     st.session_state['filters_reset'] = True
+    st.session_state['keyword_counts'].clear()  # Clear keyword counts
+    save_keyword_counts(st.session_state['keyword_counts'])  # Save the cleared counts
 
 # Sidebar filters
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
@@ -109,9 +113,9 @@ shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):", st.session_st
 filtered_data = all_data.copy()
 
 if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
-    if search_query:
-        keyword_counts[search_query] += 1
-        save_keyword_counts(keyword_counts)
+    if search_query and not st.session_state['filters_reset']:
+        st.session_state['keyword_counts'][search_query] += 1
+        save_keyword_counts(st.session_state['keyword_counts'])
         filtered_data = filtered_data[
             filtered_data['product_title'].str.contains(search_query, case=False, na=False) |
             filtered_data['brand'].str.contains(search_query, case=False, na=False)
