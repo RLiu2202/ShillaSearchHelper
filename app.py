@@ -2,17 +2,15 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
-import random
-
 
 # Function to load keyword counts from a file
 def load_keyword_counts():
     try:
         with open("keywords.json", "r") as f:
-            data = json.load(f)  
-            return Counter(data)  
-    except (FileNotFoundError, json.JSONDecodeError): 
-        return Counter()  
+            data = json.load(f)  # 尝试读取 JSON 数据
+            return Counter(data)  # 转换为 Counter 对象
+    except (FileNotFoundError, json.JSONDecodeError):  # 文件不存在或 JSON 无效
+        return Counter()  # 返回一个空的 Counter 对象
 
 # Function to save keyword counts to a file
 def save_keyword_counts(counter):
@@ -29,21 +27,17 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the combined data with caching
-#@st.cache_data
+@st.cache_data
 def load_data(file_path):
     excel_data = pd.ExcelFile(file_path)
     return pd.concat([pd.read_excel(file_path, sheet_name=sheet) for sheet in excel_data.sheet_names], ignore_index=True)
 
-# load data
-file_path = '_checkpoint1203.xlsx'  # 每次更新记得替换
+# 加载数据
+file_path = '_checkpoint1203.xlsx'  # 替换为您的 Excel 文件路径
 all_data = load_data(file_path)
 
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
-
-# Format prices to 2 decimal places
-all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
-all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
@@ -97,7 +91,7 @@ shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
 filtered_data = all_data.copy()
 
 # Apply filters only if search_query or any filter is set
-if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
+if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].min()) or max_price != float(all_data['price'].max())):
     # Update keyword counts and save to file
     if search_query:
         keyword_counts[search_query] += 1
