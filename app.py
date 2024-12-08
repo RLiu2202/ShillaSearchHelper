@@ -138,7 +138,8 @@ if search_query or selected_brand != "All" or discount_only or shelf_query or (m
 
     # Apply Barcode Search
     if barcode_query:
-	filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
+        filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query
+
 
     # Display filtered results
     st.header("Search Results")
