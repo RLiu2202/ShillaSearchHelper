@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import json
 from collections import Counter
+import random
 
 
 # Function to load keyword counts from a file
@@ -45,6 +46,9 @@ all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 all_data['price'] = all_data['price'].map(lambda x: f"{x:.2f}")
 all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 
+# Barcode should be strings
+all_data['Barcode'] = all_data['Barcode'].astype(str)
+
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
 
@@ -75,9 +79,6 @@ if st.sidebar.checkbox("Show Shelf Position"):
 # Keyword search
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:")
 
-# Barcode search
-barcode_query = st.sidebar.text_input("Search by Barcode:")
-
 # Brand filter
 unique_brands = all_data['brand'].dropna().unique()
 selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list(unique_brands))
@@ -85,9 +86,9 @@ selected_brand = st.sidebar.selectbox("Filter by Brand:", options=["All"] + list
 # Price range filter
 min_price, max_price = st.sidebar.slider(
     "Filter by Price Range:",
-    min_value=float(all_data['price'].astype(float).min()),
-    max_value=float(all_data['price'].astype(float).max()),
-    value=(float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max()))
+    min_value=float(all_data['price'].min()),
+    max_value=float(all_data['price'].max()),
+    value=(float(all_data['price'].min()), float(all_data['price'].max()))
 )
 
 # Discount filter
@@ -96,14 +97,14 @@ discount_only = st.sidebar.checkbox("Show Discounted Items Only")
 # Shelf location filter
 shelf_query = st.sidebar.text_input("Search by Shelf (e.g., a6):")
 
+# Barcode search
+barcode_query = st.sidebar.text_input("Search by Barcode:")
+
 # Initialize filtered_data as the full dataset
 filtered_data = all_data.copy()
 
 # Apply filters only if search_query or any filter is set
-if barcode_query:
-    # Barcode search takes priority
-    filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
-elif search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
+if search_query or selected_brand != "All" or discount_only or shelf_query or (min_price != float(all_data['price'].astype(float).min()) or max_price != float(all_data['price'].astype(float).max())):
     # Update keyword counts and save to file
     if search_query:
         keyword_counts[search_query] += 1
@@ -122,7 +123,7 @@ elif search_query or selected_brand != "All" or discount_only or shelf_query or 
 
     # Apply Price range filter
     filtered_data = filtered_data[
-        (filtered_data['price'].astype(float) >= min_price) & (filtered_data['price'].astype(float) <= max_price)
+        (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)
     ]
 
     # Apply Discount filter
@@ -135,19 +136,23 @@ elif search_query or selected_brand != "All" or discount_only or shelf_query or 
             filtered_data['Place'].str.contains(shelf_query, case=False, na=False)
         ]
 
-# Display filtered results
-st.header("Search Results")
-if not filtered_data.empty:
-    for _, row in filtered_data.iterrows():
-        st.image(row['image'], width=150)
-        st.write(f"**Product Name:** {row['product_title']}")
-        st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
-        st.write(f"**Brand:** {row['brand']}")
-        st.write(f"**Price:** €{row['price']}")
-        st.write(f"**After Sale Price:** €{row['after_sale']}")  
-        st.write(f"**Discount Info:** {row['Korting']}")  
-        st.write(f"**Best Before Date:** {row['bbd']}")
-        st.write(f"[View Details]({row['link']})")
-        st.write("---")
-else:
-    st.write("No products found matching the selected filters.")
+    # Apply Barcode Search
+    if barcode_query:
+	filtered_data = filtered_data[filtered_data['Barcode'] == barcode_query]
+
+    # Display filtered results
+    st.header("Search Results")
+    if not filtered_data.empty:
+        for _, row in filtered_data.iterrows():
+            st.image(row['image'], width=150)
+            st.write(f"**Product Name:** {row['product_title']}")
+            st.write(f"**Shelf Location:** {row.get('Place', 'N/A')}")
+            st.write(f"**Brand:** {row['brand']}")
+            st.write(f"**Price:** €{row['price']}")
+            st.write(f"**After Sale Price:** €{row['after_sale']}")  
+            st.write(f"**Discount Info:** {row['Korting']}")  
+            st.write(f"**Best Before Date:** {row['bbd']}")
+            st.write(f"[View Details]({row['link']})")
+            st.write("---")
+    else:
+        st.write("No products found matching the selected filters.")
