@@ -42,6 +42,10 @@ all_data = load_data(file_path)
 # Convert BBD to date only
 all_data['bbd'] = pd.to_datetime(all_data['bbd']).dt.date
 
+# Format price to two decimal places
+all_data['price'] = all_data['price'].apply(lambda x: f"{x:.2f}")
+all_data['after_sale'] = all_data['after_sale'].apply(lambda x: f"{x:.2f}" if not pd.isna(x) else x)
+
 # Load keyword counts at the start
 keyword_counts = load_keyword_counts()
 
@@ -63,6 +67,10 @@ st.write("Welcome! Please use the search filters on the left to find products.")
 
 # Sidebar for multi-condition filters
 st.sidebar.header("Search Filters")
+
+# Add a reset button to clear filters
+if st.sidebar.button("Reset Filters"):
+    st.experimental_rerun()
 
 # Sidebar option to view supermarket layout
 if st.sidebar.checkbox("Show Shelf Position"):
