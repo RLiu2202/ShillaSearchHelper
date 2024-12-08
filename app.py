@@ -50,6 +50,9 @@ all_data['after_sale'] = all_data['after_sale'].map(lambda x: f"{x:.2f}")
 keyword_counts = load_keyword_counts()
 
 # Initialize session state for filters
+if 'filters_reset' not in st.session_state:
+    st.session_state['filters_reset'] = False
+
 if 'search_query' not in st.session_state:
     st.session_state['search_query'] = ""
 if 'selected_brand' not in st.session_state:
@@ -88,8 +91,7 @@ if st.sidebar.button("Reset Filters"):
     st.session_state['min_price'], st.session_state['max_price'] = float(all_data['price'].astype(float).min()), float(all_data['price'].astype(float).max())
     st.session_state['discount_only'] = False
     st.session_state['shelf_query'] = ""
-    # Rerun the app
-    st.experimental_rerun()
+    st.session_state['filters_reset'] = True
 
 # Sidebar filters
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:", st.session_state['search_query'])
