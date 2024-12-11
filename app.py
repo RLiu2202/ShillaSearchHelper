@@ -71,7 +71,9 @@ st.sidebar.header("Search Filters")
 # Sidebar option to view supermarket layout
 if st.sidebar.checkbox("Show Shelf Position"):
     st.header("Shilla Layout")
-    st.image("shelf position.jpg", caption="Shilla Layout", use_column_width=True)
+    st.image("shelf position.jpg", caption="Shilla", use_container_width=True)
+    #use use_container_width=True to make the image full width
+    #instead of use_column_width=True
 
 # Keyword search
 search_query = st.sidebar.text_input("Search by Product Name or Keyword:")
