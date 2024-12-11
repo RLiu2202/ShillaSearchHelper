@@ -62,7 +62,7 @@ else:
     st.write("No keywords searched yet.")
 
 # Welcome message
-st.title("Good Morning Ryota! Let's Find What You Need :)")
+st.title("Hello! Let's Find What You Need :)")
 st.write("Welcome! Please use the search filters on the left to find products.")
 
 # Sidebar for multi-condition filters
